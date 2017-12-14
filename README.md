@@ -1,6 +1,6 @@
 # NProg
 
-NProg is a general-purpose progress tracker for .NET. It is useful in batch processing applications where you want to periodically display, log, or otherwise process overall progress.
+NProg is a general-purpose progress tracking framework for .NET. It is useful in batch processing applications where you want to periodically display, log, or otherwise process overall progress.
 
 ## Example
 
