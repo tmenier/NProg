@@ -21,15 +21,15 @@ tracker.OnComplete(prog =>
 // run
 tracker.Start();
 foreach (var item in workItems) {
-	tracker.ItemStarted();
-	try {
-		ProcessItem(item);
-		tracker.ItemSucceeded();
-	}
-	catch (Exception ex) {
-		tracker.ItemFailed();
-		// log exception
-	}
+    tracker.ItemStarted();
+    try {
+        ProcessItem(item);
+        tracker.ItemSucceeded();
+    }
+    catch (Exception ex) {
+        tracker.ItemFailed();
+        // log exception
+    }
 }
 ```
 
