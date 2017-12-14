@@ -27,19 +27,26 @@ foreach (var item in workItems) {
 }
 ```
 
+Have a look at the [demo](https://github.com/tmenier/NProg/blob/master/NProg.Demo/Program.cs) for a more in-depth example.
+
 ## Setup
 
-As the example shows, you set up a tracker by declaring the total item count and creating triggers and actions with the `Every` (periodic) and `On` (one-time) methods. Extension methoods on `int` help you create the triggers:
+As the example shows, you set up a tracker by declaring the total item count and creating triggers and actions with the `Every` (periodic) and `On` (one-time) methods. Extension methoods on `int` help you define the triggers:
 
 ```C#
+// triggers based on item count
 i.ItemsStarted()
 i.ItemsDone()
 i.ItemsSucceeded()
 i.ItemsFailed()
+
+// triggers based on percent of total
 i.PercentStarted()
 i.PercentDone()
 i.PercentSucceeded()
 i.PercentFailed()
+
+// triggers based on elapsed time
 i.Seconds()
 i.Minutes()
 i.Hours()
@@ -97,8 +104,8 @@ Referring again to the example, `Start`, `ItemStarted`, `ItemSucceeded`, `ItemFa
     
 ## Get it
 
-This project is brand new and still in the experimental phase. It is not available on NuGet (yet), but for convenience it is completely contained in a single C# file that you can drop into your project. Get it here.
+This project is brand new and still in the experimental phase. It is not available on NuGet (yet), but for convenience it is completely contained in a single C# file that you can drop into your project. Get it [here](https://raw.githubusercontent.com/tmenier/NProg/master/NProg/Tracker.cs).
 
 ## Questions? Feedback?
 
-Like it? Hate it? Found a bug? Got a feature request? Did I reinvent something that already exists? For time being I welcome any and all feedback under issues.
+Like it? Hate it? Found a bug? Got a feature request? Did I reinvent something that already exists? Got a better name for this thing? For time being I welcome any and all feedback under [issues](https://github.com/tmenier/NProg/issues).
