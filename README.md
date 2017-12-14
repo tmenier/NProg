@@ -9,9 +9,9 @@ using NProg;
 
 var tracker = new Tracker(workItems.Count);
 tracker.Every(100.ItemsDone(), prog => Console.WriteLine($"{prog.ItemsDone} items done"));
-tracker.Every(10.Seconds(), prog => Console.WriteLine($"{prog.ItemsDone} items done"));
-tracker.On(50.PercentDone(), prog => Console.WriteLine("Half way done"));
-tracker.OnComplete(prog => Console.WriteLine($"Finished in {prog.ElapsedSeconds} seconds"));
+tracker.Every(10.Seconds(), prog => Console.WriteLine($"{prog.PercentRemaining}% left to go"));
+tracker.On(50.PercentDone(), prog => Console.WriteLine("Half way, should be done around {prog.EstEndTimeLocal:h:mm tt}"));
+tracker.OnComplete(prog => Console.WriteLine($"Finished in {prog.ElapsedMinutes} minutes"));
 
 tracker.Start();
 foreach (var item in workItems) {
