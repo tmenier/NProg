@@ -34,10 +34,10 @@ foreach (var item in workItems) {
         tracker.ItemFailed();
         // log exception
     }
-	finally {
-		// await any asynchronous actions that may have been triggered
-		await tracker.CompleteAsync();
-	}
+    finally {
+        // await any asynchronous actions that may have been triggered
+        await tracker.CompleteAsync();
+    }
 }
 ```
 
