@@ -113,5 +113,24 @@ namespace NProg.Test
 			tracker.Now(prog => nowRan = true);
 			Assert.IsTrue(nowRan);
 		}
+
+		[Test]
+		public async Task async_tracking_works() {
+			var tracker = new Tracker(10);
+			var counter = 0;
+
+			tracker.Every(2.ItemsDone(), async prog => {
+				await Task.Delay(1000);
+				counter++;
+			});
+
+			for (var i = 0; i < 10; i++)
+				tracker.ItemSucceeded();
+
+			// counter should get incremeted 5 times, but not until we await completion
+			Assert.AreEqual(0, counter);
+			await tracker.CompleteAsync();
+			Assert.AreEqual(5, counter);
+		}
 	}
 }

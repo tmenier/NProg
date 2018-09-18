@@ -18,6 +18,10 @@ tracker.On(50.PercentDone(), prog =>
 tracker.OnComplete(prog =>
     Console.WriteLine($"Finished in {prog.ElapsedMinutes} minutes"));
 
+// async actions are also supported, awaitable via tracker.CompleteAsync()
+tracker.OnComplete(prog =>
+	LogAsync($"Finished in {prog.ElapsedMinutes} minutes"));
+
 // run
 tracker.Start();
 foreach (var item in workItems) {
@@ -30,6 +34,10 @@ foreach (var item in workItems) {
         tracker.ItemFailed();
         // log exception
     }
+	finally {
+		// await any asynchronous actions that may have been triggered
+		await tracker.CompleteAsync();
+	}
 }
 ```
 

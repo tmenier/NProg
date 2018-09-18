@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace NProg
 {
@@ -14,22 +15,35 @@ namespace NProg
 		private int _failed;
 
 		private List<ProgressAction> _actions = new List<ProgressAction>();
+		private List<Task> _tasks = new List<Task>();
 
 		public Tracker(int itemCount) => _total = itemCount;
 		public void Start() => _startTime = DateTime.UtcNow.Ticks;
 		public void Stop() => _endTime = DateTime.UtcNow.Ticks;
 
-		public void Every(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Invoke = action, Recurring = true });
-		public void On(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Invoke = action, Recurring = false });
+		public void Every(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Action = action, Recurring = true });
+		public void On(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Action = action, Recurring = false });
 		public void Every(TimeSpan interval, Action<Progress> action) => Every(new Trigger(interval.Ticks, p => p.ElapsedTime.Ticks), action);
 		public void OnComplete(Action<Progress> action) => On(_total.ItemsDone(), action);
 		public void Now(Action<Progress> action) => action(GetProgress());
+
+		public void Every(Trigger trigger, Func<Progress, Task> action) => _actions.Add(new ProgressAction { Trigger = trigger, AsyncAction = action, Recurring = true });
+		public void On(Trigger trigger, Func<Progress, Task> action) => _actions.Add(new ProgressAction { Trigger = trigger, AsyncAction = action, Recurring = false });
+		public void Every(TimeSpan interval, Func<Progress, Task> action) => Every(new Trigger(interval.Ticks, p => p.ElapsedTime.Ticks), action);
+		public void OnComplete(Func<Progress, Task> action) => On(_total.ItemsDone(), action);
+		public void Now(Func<Progress, Task> action) => action(GetProgress());
 
 		private readonly object _lock = new object();
 
 		public void ItemStarted() => ProcessTriggers(ref _started);
 		public void ItemSucceeded() => ProcessTriggers(ref _succeeded);
 		public void ItemFailed() => ProcessTriggers(ref _failed);
+
+		/// <summary>
+		/// Returns a completion task that should be awaited if any async actions were triggered.
+		/// Async actions are NOT awaited inline.
+		/// </summary>
+		public Task CompleteAsync() => Task.WhenAll(_tasks);
 
 		public Progress GetProgress() => new Progress(_startTime, _endTime, _total, _started, _succeeded, _failed);
 
@@ -46,15 +60,23 @@ namespace NProg
 					if (!act.Recurring)
 						_actions.Remove(act);
 				}
+
+				_tasks.RemoveAll(t => t.IsCompleted);
 			}
 
-			fired.ForEach(act => act.Invoke(prog));
+			foreach (var act in fired) {
+				var task = act.AsyncAction?.Invoke(prog);
+				act.Action?.Invoke(prog);
+				if (task?.IsCompleted == false)
+					_tasks.Add(task);
+			}
 		}
 
 		private class ProgressAction
 		{
 			public Trigger Trigger { get; set; }
-			public Action<Progress> Invoke { get; set; }
+			public Action<Progress> Action { get; set; }
+			public Func<Progress, Task> AsyncAction { get; set; }
 			public bool Recurring { get; set; }
 		}
 	}
