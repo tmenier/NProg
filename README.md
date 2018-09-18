@@ -20,7 +20,7 @@ tracker.OnComplete(prog =>
 
 // async actions are also supported, awaitable via tracker.CompleteAsync()
 tracker.OnComplete(prog =>
-	LogAsync($"Finished in {prog.ElapsedMinutes} minutes"));
+    LogAsync($"Finished in {prog.ElapsedMinutes} minutes"));
 
 // run
 tracker.Start();
