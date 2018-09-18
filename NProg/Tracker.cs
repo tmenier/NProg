@@ -23,6 +23,7 @@ namespace NProg
 		public void On(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Invoke = action, Recurring = false });
 		public void Every(TimeSpan interval, Action<Progress> action) => Every(new Trigger(interval.Ticks, p => p.ElapsedTime.Ticks), action);
 		public void OnComplete(Action<Progress> action) => On(_total.ItemsDone(), action);
+		public void Now(Action<Progress> action) => action(GetProgress());
 
 		private readonly object _lock = new object();
 

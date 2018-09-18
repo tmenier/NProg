@@ -105,5 +105,13 @@ namespace NProg.Test
 			CollectionAssert.Contains(counts, 7);
 			CollectionAssert.Contains(counts, 8);
 		}
+
+		[Test]
+		public void now_runs_immediately() {
+			var tracker = new Tracker(10);
+			var nowRan = false;
+			tracker.Now(prog => nowRan = true);
+			Assert.IsTrue(nowRan);
+		}
 	}
 }
