@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -60,21 +61,23 @@ namespace NProg.Test
 
 		[Test]
 		public void time_tracking_works() {
-			var logCount = 0;
+			var count = 0;
 
 			var tracker = new Tracker(9);
-			tracker.Every(TimeSpan.FromMilliseconds(100), prog => logCount++);
+			tracker.Every(TimeSpan.FromMilliseconds(100), prog => count++);
+
+			Thread.Sleep(200); // timer shouldn't fire yet
 
 			tracker.Start();
-			for (var i = 0; i < 9; i++) {
-				tracker.ItemStarted();
+			for (var i = 0; i < 10; i++) {
 				Thread.Sleep(100);
-				tracker.ItemSucceeded();
 			}
 			tracker.Stop();
 
-			Assert.AreEqual(9, logCount);
-			// 900 ms and change should have elapsed, just check fo 9xx
+			Thread.Sleep(200); // timer should have stopped firing
+
+			Assert.AreEqual(9, count);
+			// 1000 ms and change should have elapsed, just check fo 9xx
 			Assert.GreaterOrEqual(9, tracker.GetProgress().ElapsedTime.Milliseconds / 100);
 		}
 

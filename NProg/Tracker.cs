@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NProg
@@ -16,20 +17,29 @@ namespace NProg
 
 		private List<ProgressAction> _actions = new List<ProgressAction>();
 		private List<Task> _tasks = new List<Task>();
+		private List<TimerAction> _timers = new List<TimerAction>();
 
 		public Tracker(int itemCount) => _total = itemCount;
-		public void Start() => _startTime = DateTime.UtcNow.Ticks;
-		public void Stop() => _endTime = DateTime.UtcNow.Ticks;
+
+		public void Start() {
+			_startTime = DateTime.UtcNow.Ticks;
+			_timers.ForEach(t => t.Start(this));
+		}
+
+		public void Stop() {
+			_endTime = DateTime.UtcNow.Ticks;
+			_timers.ForEach(t => t.Stop());
+		}
 
 		public void Every(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Action = action, Recurring = true });
 		public void On(Trigger trigger, Action<Progress> action) => _actions.Add(new ProgressAction { Trigger = trigger, Action = action, Recurring = false });
-		public void Every(TimeSpan interval, Action<Progress> action) => Every(new Trigger(interval.Ticks, p => p.ElapsedTime.Ticks), action);
+		public void Every(TimeSpan interval, Action<Progress> action) => _timers.Add(new TimerAction { Interval = interval, Action = action });
 		public void OnComplete(Action<Progress> action) => On(_total.ItemsDone(), action);
 		public void Now(Action<Progress> action) => action(GetProgress());
 
 		public void Every(Trigger trigger, Func<Progress, Task> action) => _actions.Add(new ProgressAction { Trigger = trigger, AsyncAction = action, Recurring = true });
 		public void On(Trigger trigger, Func<Progress, Task> action) => _actions.Add(new ProgressAction { Trigger = trigger, AsyncAction = action, Recurring = false });
-		public void Every(TimeSpan interval, Func<Progress, Task> action) => Every(new Trigger(interval.Ticks, p => p.ElapsedTime.Ticks), action);
+		public void Every(TimeSpan interval, Func<Progress, Task> action) => _timers.Add(new TimerAction { Interval = interval, AsyncAction = action } );
 		public void OnComplete(Func<Progress, Task> action) => On(_total.ItemsDone(), action);
 		public void Now(Func<Progress, Task> action) => action(GetProgress());
 
@@ -64,30 +74,51 @@ namespace NProg
 				_tasks.RemoveAll(t => t.IsCompleted);
 			}
 
-			foreach (var act in fired) {
-				var task = act.AsyncAction?.Invoke(prog);
-				act.Action?.Invoke(prog);
+			fired.ForEach(act => act.Invoke(prog, _tasks));
+		}
+
+		private abstract class ActionBase
+		{
+			public Action<Progress> Action { get; set; }
+			public Func<Progress, Task> AsyncAction { get; set; }
+
+			public void Invoke(Progress prog, IList<Task> tasks) {
+				var task = AsyncAction?.Invoke(prog);
+				Action?.Invoke(prog);
 				if (task?.IsCompleted == false)
-					_tasks.Add(task);
+					tasks.Add(task);
 			}
 		}
 
-		private class ProgressAction
+		private class ProgressAction : ActionBase
 		{
 			public Trigger Trigger { get; set; }
-			public Action<Progress> Action { get; set; }
-			public Func<Progress, Task> AsyncAction { get; set; }
 			public bool Recurring { get; set; }
+		}
+
+		private class TimerAction : ActionBase
+		{
+			private Timer _timer;
+
+			public TimeSpan Interval { get; set; }
+
+			public void Start(Tracker tracker) {
+				_timer = new Timer(_ => Invoke(tracker.GetProgress(), tracker._tasks), null, Interval, Interval);
+			}
+
+			public void Stop() {
+				_timer.Dispose();
+			}
 		}
 	}
 
 	public class Trigger
 	{
-		private readonly long _targetNumber;
-		private readonly Func<Progress, long> _getCurrentNumber;
-		private long _nextNumber;
+		private readonly int _targetNumber;
+		private readonly Func<Progress, int> _getCurrentNumber;
+		private int _nextNumber;
 
-		public Trigger(long targetNumber, Func<Progress, long> getCurrentNumber) {
+		public Trigger(int targetNumber, Func<Progress, int> getCurrentNumber) {
 			_nextNumber = _targetNumber = targetNumber;
 			_getCurrentNumber = getCurrentNumber;
 		}
